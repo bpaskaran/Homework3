@@ -1,64 +1,118 @@
+
 #include "MyBitManipulation.h"
+#include <stdio.h>
 
 int ToggleBit(int num, int pos) {
-    if (pos < 0 || pos > 31) return num;
-    return num ^ (1U << pos);
+
+   if (pos < 0 || pos > 31) {
+      return num;
+   }
+
+   unsigned int mask = 1U;
+   mask = mask << pos;
+
+   num = num ^ mask;
+
+   return num;
 }
+
 
 int GetMSB(int num) {
-    unsigned int u = (unsigned int)num;
-    if (u == 0U) return -1;
 
-    for (int p = 31; p >= 0; --p) {
-        if ((u >> p) & 1U) return p;
-    }
-    return -1; 
+   unsigned int value = (unsigned int)num;
+   int i;
+
+   if (value == 0U) {
+      return -1;
+   }
+
+   for (i = 31; i >= 0; i--) {
+      if (((value >> i) & 1U) == 1U) {
+         return i;
+      }
+   }
+
+   return -1;
 }
+
 
 int ClearBitRange(int num, int start, int end) {
-    if (start < 0 || end > 31 || start > end) return num;
 
-    unsigned int u = (unsigned int)num;
+   if (start < 0 || end > 31 || start > end) {
+      return num;
+   }
 
-    unsigned int left;
-    if (end == 31) {
-        left = 0U; 
-    } else {
-        left = ~0U << (end + 1);
-    }
+   unsigned int value = (unsigned int)num;
+   unsigned int left_mask;
+   unsigned int right_mask;
+   unsigned int final_mask;
 
-    unsigned int right;
-    if (start == 0) {
-        right = 0U; 
-    } else {
-        right = (1U << start) - 1U;
-    }
+ 
+   if (end == 31) {
+      left_mask = 0U;
+   } else {
+      left_mask = ~0U;
+      left_mask = left_mask << (end + 1);
+   }
 
-    unsigned int mask = left | right;
-    return (int)(u & mask);
+   if (start == 0) {
+      right_mask = 0U;
+   } else {
+      right_mask = (1U << start) - 1U;
+   }
+
+   final_mask = left_mask | right_mask;
+
+   value = value & final_mask;
+
+   return (int)value;
 }
+
 
 int RotateLeft(int num, int d) {
-    unsigned int u = (unsigned int)num;
 
+   unsigned int value = (unsigned int)num;
+   unsigned int left_part;
+   unsigned int right_part;
+   unsigned int result;
 
-    d %= 32;
-    if (d < 0) d += 32; 
+   d = d % 32;
 
-    if (d == 0) return num;
+   if (d < 0) {
+      d = d + 32;
+   }
 
-    unsigned int res = (u << d) | (u >> (32 - d));
-    return (int)res;
+   if (d == 0) {
+      return num;
+   }
+
+   left_part = value << d;
+   right_part = value >> (32 - d);
+
+   result = left_part | right_part;
+
+   return (int)result;
 }
 
+
+
+
 int SwapOddEvenBits(int num) {
-    unsigned int u = (unsigned int)num;
 
-    unsigned int even = u & 0xAAAAAAAAU; // bits 1,3,5,...
-    unsigned int odd  = u & 0x55555555U; // bits 0,2,4,...
+   unsigned int value = (unsigned int)num;
 
-    even >>= 1;
-    odd <<= 1;
+   unsigned int even_bits;
+   unsigned int odd_bits;
+   unsigned int result;
 
-    return (int)(even | odd);
+ 
+   even_bits = value & 0xAAAAAAAAU;
+   odd_bits  = value & 0x55555555U;
+
+   even_bits = even_bits >> 1;
+   odd_bits  = odd_bits << 1;
+
+   result = even_bits | odd_bits;
+
+   return (int)result;
 }

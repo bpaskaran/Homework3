@@ -2,72 +2,99 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-static bool is_valid_repr(char r) {
-    return (r == '2' || r == 'S');
-}
-
 void repr_convert(char source_repr, char target_repr, unsigned int repr) {
-    if (!is_valid_repr(source_repr) || !is_valid_repr(target_repr)) {
-        printf("error\n");
-        return;
-    }
 
-    long long value = 0;
 
-    if (source_repr == '2') {
-    
-        if (repr & 0x80000000U) {
-            value = (long long)repr - (1LL << 32); 
-        } else {
-            value = (long long)repr;
-        }
-    } else { 
-        unsigned int sign = (repr >> 31) & 1U;
-        unsigned int mag  = repr & 0x7FFFFFFFU;
+   if (source_repr != '2' && source_repr != 'S') {
+      printf("error\n");
+      return;
+   }
+   if (target_repr != '2' && target_repr != 'S') {
+      printf("error\n");
+      return;
+   }
 
-        if (mag == 0U) {
-            value = 0; 
-        } else {
-            value = sign ? -(long long)mag : (long long)mag;
-        }
-    }
+   /* 2) Decode (turn the input bits into a signed number in 'value') */
+   long long value = 0;
 
-    
-    if (target_repr == '2') {
-        
-        const long long MIN_TWOS = -(1LL << 31);
-        const long long MAX_TWOS =  (1LL << 31) - 1;
+   if (source_repr == '2') {
+      /* two's complement: check sign bit (bit 31) */
+      if ((repr & 0x80000000U) != 0U) {
+         /* negative: value = repr - 2^32 */
+         value = (long long)repr;
+         value = value - (1LL << 32);
+      } else {
+         /* positive */
+         value = (long long)repr;
+      }
+   } else {
+      /* sign/magnitude: top bit is sign, rest is magnitude */
+      unsigned int sign = (repr >> 31) & 1U;
+      unsigned int mag  = repr & 0x7FFFFFFFU;
 
-        if (value < MIN_TWOS || value > MAX_TWOS) {
-            printf("undefined\n");
-            return;
-        }
+      /* treat both +0 and -0 as 0 */
+      if (mag == 0U) {
+         value = 0;
+      } else {
+         if (sign == 1U) {
+            value = -(long long)mag;
+         } else {
+            value = (long long)mag;
+         }
+      }
+   }
 
-        unsigned int out = (unsigned int)(value & 0xFFFFFFFFULL);
-        printf("%08x\n", out);
-        return;
-    } else { 
-        
-        const long long MIN_SM = -((1LL << 31) - 1);
-        const long long MAX_SM =  ((1LL << 31) - 1);
+   /* 3) Convert to target and 4) print */
 
-        if (value == 0) {
-            
-            printf("%08x\n", 0U);
-            return;
-        }
+   if (target_repr == '2') {
+      /* must fit in signed 32-bit */
+      long long min = -(1LL << 31);
+      long long max = (1LL << 31) - 1;
 
-        if (value < MIN_SM || value > MAX_SM) {
-            
-            printf("undefined\n");
-            return;
-        }
+      if (value < min || value > max) {
+         printf("undefined\n");
+         return;
+      }
 
-        unsigned int sign = (value < 0) ? 1U : 0U;
-        unsigned int mag  = (unsigned int)((value < 0) ? -value : value);
+      /* printing as 8 hex digits */
+      printf("%08x\n", (unsigned int)value);
+      return;
+   }
 
-        unsigned int out = (sign << 31) | (mag & 0x7FFFFFFFU);
-        printf("%08x\n", out);
-        return;
-    }
+   /* target is 'S' (sign/magnitude) */
+   {
+      /* sign/magnitude cannot represent -2^31 */
+      long long min = -((1LL << 31) - 1);
+      long long max =  ((1LL << 31) - 1);
+
+      if (value == 0) {
+         printf("%08x\n", 0U);
+         return;
+      }
+
+      if (value < min || value > max) {
+         printf("undefined\n");
+         return;
+      }
+
+      /* build sign/magnitude bits */
+      unsigned int sign_bit = 0U;
+      unsigned int mag = 0U;
+
+      if (value < 0) {
+         sign_bit = 1U;
+         mag = (unsigned int)(-value);
+      } else {
+         sign_bit = 0U;
+         mag = (unsigned int)value;
+      }
+
+      /* put sign in bit 31, magnitude in bits 30..0 */
+      unsigned int out = 0U;
+      out = sign_bit << 31;
+      out = out | (mag & 0x7FFFFFFFU);
+
+      printf("%08x\n", out);
+      return;
+   }
 }
