@@ -8,7 +8,7 @@ Run:
 
 Part 1:
   - ToggleBit: tested valid positions (0,3) and invalid (32).
-  - GetMSB: tested 0, 1, 18.
+  - GetMSB: tested 18,0,1.
   - ClearBitRange: tested normal range, full range, invalid range.
   - RotateLeft: tested d=1,2,31.
   - SwapOddEvenBits: tested 23->43 and 0->0.
